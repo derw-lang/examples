@@ -1,0 +1,52 @@
+import "../derw-packages/derw-lang/html/src/Html" exposing (HtmlNode, RunningProgram, div, button, onClick, text, program)
+import "../derw-packages/derw-lang/stdlib/src/String" exposing (fromNumber)
+
+type alias Model = {
+    value: number
+}
+
+init : Model
+init =
+   { value: 0 }
+
+-- UPDATE
+
+type Msg
+  = Increment
+  | Decrement
+
+update : Msg -> Model -> Model
+update msg model =
+    case msg of
+        Increment -> { value: model.value + 1 }
+        Decrement -> { value: model.value - 1 }
+
+-- VIEW
+
+viewDecrement: HtmlNode Msg
+viewDecrement =
+    button [ onClick (\x -> Decrement) ] [ ] [ text "-" ]
+
+viewIncrement: HtmlNode Msg
+viewIncrement =
+    button [ onClick (\x -> Increment) ] [ ] [ text "+" ]
+
+viewValue: Model -> HtmlNode Msg
+viewValue model =
+    fromNumber model.value
+        |> text
+        |> (\x -> div [ ] [ ] [ x ])
+
+view : Model -> HtmlNode Msg
+view model =
+    div [] [] [ viewDecrement, viewValue model, viewIncrement ]
+
+root: any
+root =
+    document.getElementById "root"
+
+main: RunningProgram Model Msg
+main =
+    program { initialModel: init, update: update, view: view, root: root }
+
+
