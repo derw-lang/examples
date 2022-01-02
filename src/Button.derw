@@ -1,4 +1,4 @@
-import "../derw-packages/derw-lang/html/src/Html" exposing (HtmlNode, RunningProgram, div, button, onClick, text, program)
+import "../derw-packages/derw-lang/html/src/Html" exposing (HtmlNode, RunningProgram, div, button, onClick, text, program, attribute)
 import "../derw-packages/derw-lang/stdlib/src/String" exposing (fromNumber)
 
 type alias Model = {
@@ -15,7 +15,7 @@ type Msg
   = Increment
   | Decrement
 
-update : Msg -> Model -> Model
+update: Msg -> Model -> Model
 update msg model =
     case msg of
         Increment -> { value: model.value + 1 }
@@ -34,10 +34,9 @@ viewIncrement =
 viewValue: Model -> HtmlNode Msg
 viewValue model =
     fromNumber model.value
-        |> text
-        |> (\x -> div [ ] [ ] [ x ])
+        |> (\x -> div [ ] [ ] [ text x ])
 
-view : Model -> HtmlNode Msg
+view: Model -> HtmlNode Msg
 view model =
     div [] [] [ viewDecrement, viewValue model, viewIncrement ]
 

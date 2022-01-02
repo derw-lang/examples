@@ -1,0 +1,51 @@
+import "../derw-packages/derw-lang/html/src/Html" exposing (HtmlNode, RunningProgram, div, button, input, onInput, onClick, text, program, attribute)
+import "../derw-packages/derw-lang/stdlib/src/String" exposing (split, join)
+import "../derw-packages/derw-lang/stdlib/src/List" as List
+
+-- MODEL
+
+type alias Model = {
+    content: string
+}
+
+init : Model
+init =
+    { content: "" }
+
+-- UPDATE
+
+type Msg
+    = Change { value: string }
+
+update : Msg -> Model -> Model
+update msg model =
+    case msg of
+        Change { value } ->
+            { content: value }
+-- VIEW
+
+reverse: string -> string
+reverse str =
+    split "" str
+        |> List.reverse
+        |> join ""
+
+view : Model -> HtmlNode Msg
+view model =
+    let
+        reversed: string
+        reversed =
+            reverse model.content
+    in
+        div [] []
+            [ input [ onInput (\x -> Change { value: x }) ] [ attribute "placeholder" "Text to reverse", attribute "value" model.content ]
+            , div [] [] [ text reversed ]
+            ]
+
+root: any
+root =
+    document.getElementById "root"
+
+main: RunningProgram Model Msg
+main =
+    program { initialModel: init, update: update, view: view, root: root }
