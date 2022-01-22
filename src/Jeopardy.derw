@@ -142,7 +142,7 @@ view model =
         p [ ] [ style_ "font-size" "12px" ] [ text "this is by msszczep on Github, rewritten in Derw as an example of Derw" ],
         p [ ] [ ] [ a [ ] [ attribute "href" "http://www.szcz.org/jeopardyheatmap.html" ] [ text "Original is here." ] ],
         p [ ] [ ] [ a [ ] [ attribute "href" "https://github.com/msszczep/jeopardy-heatmap/" ] [ text "Copy of Elm source code is here." ] ],
-        p [ ] [ ] [ a [ ] [ attribute "href" "https://github.com/derw-lang/examples/" ] [ text "Copy of Derw source code is here." ] ],
+        p [ ] [ ] [ a [ ] [ attribute "href" "https://github.com/derw-lang/examples/blob/main/src/Jeopardy.derw" ] [ text "Copy of Derw source code is here." ] ],
         p [ ] [ ] [ stats model ],
         div [ ] [
             style_ "display" "grid",
