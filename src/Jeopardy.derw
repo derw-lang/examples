@@ -1,0 +1,166 @@
+import "../derw-packages/derw-lang/html/src/Html" exposing ( HtmlNode, RunningProgram, div, button, input, a, h3, p, onInput, onClick, text, program, attribute, style_ )
+import "../derw-packages/derw-lang/stdlib/src/String" exposing ( split, join, fromNumber )
+import "../derw-packages/derw-lang/stdlib/src/List" as List
+import "../derw-packages/derw-lang/stdlib/src/Maybe" as Maybe
+import "../derw-packages/derw-lang/stdlib/src/Dict" as Dict
+
+type AnswerStatus =
+    Unread
+    | Correct
+    | Incorrect
+
+type alias Model = {
+    dict: any
+}
+
+initModel: Model
+initModel =
+    [ 1..30 ]
+        |> List.map (\index ->
+            {
+                key: index,
+                value: Unread
+            }
+        )
+        |> Dict.fromList
+
+type Msg =
+    SetCorrect { value: number }
+    | SetIncorrect { value: number }
+    | SetUnread { value: number }
+
+justCorrect: any -> AnswerStatus
+justCorrect x =
+    Correct
+
+justIncorrect: any -> AnswerStatus
+justIncorrect x =
+    Incorrect
+
+justUnread: any -> AnswerStatus
+justUnread x =
+    Unread
+
+update: Msg -> Model -> Model
+update msg model =
+    case msg of
+        SetCorrect { value } ->
+            Dict.update value (\x -> Maybe.map justCorrect x) model
+        SetIncorrect { value } ->
+            Dict.update value (\x -> Maybe.map justIncorrect x) model
+        SetUnread { value } ->
+            Dict.update value (\x -> Maybe.map justUnread x) model
+
+getColor: AnswerStatus -> string
+getColor s =
+    case s of
+        Unread ->
+            "blue"
+        Correct ->
+            "#52D017"
+        Incorrect ->
+            "red"
+
+type alias Pair = {
+    key: number,
+    value: any
+}
+
+makeRectangle: Pair -> HtmlNode Msg
+makeRectangle answer =
+    div [ ] [
+        style_ "width" "140px",
+        style_ "height" "100px",
+        style_ "margin-top" "10px",
+        style_ "padding-top" "5px",
+        style_ "padding-left" "5px",
+        style_ "background-color" (getColor answer.value),
+        style_ "border" "2px solid black"
+    ] [
+        button [ onClick (\_ -> SetCorrect { value: answer.key }) ] [ ] [ text "Yes" ],
+        text " ",
+        button [ onClick (\_ -> SetIncorrect { value: answer.key }) ] [ ] [ text "No" ],
+        text " ",
+        button [ onClick (\_ -> SetUnread { value: answer.key }) ] [ ] [ text "Reset" ]
+    ]
+
+isCorrect: AnswerStatus -> boolean
+isCorrect answer =
+    case answer of
+        Correct ->
+            true
+        default ->
+            false
+
+isIncorrect: AnswerStatus -> boolean
+isIncorrect answer =
+    case answer of
+        Incorrect ->
+            true
+        default ->
+            false
+
+isUnread: AnswerStatus -> boolean
+isUnread answer =
+    case answer of
+        Unread ->
+            true
+        default ->
+            false
+
+stats: Model -> HtmlNode Msg
+stats model =
+    let
+        correct: string
+        correct =
+            Dict.values model
+                |> List.filter isCorrect
+                |> List.length
+                |> fromNumber
+
+        incorrect: string
+        incorrect =
+            Dict.values model
+                |> List.filter isIncorrect
+                |> List.length
+                |> fromNumber
+
+        unread: string
+        unread =
+            Dict.values model
+                |> List.filter isUnread
+                |> List.length
+                |> fromNumber
+    in
+        " Correct: " + correct + " | Incorrect: " + incorrect + " | Unread: " + unread
+            |> text
+
+view: Model -> HtmlNode Msg
+view model =
+    div [ ] [ style_ "padding" "10px" ] [
+        h3 [ ] [ ] [ text "Jeopardy! Heatmap" ],
+        p [ ] [ style_ "font-size" "12px" ] [ text "this is by msszczep on Github, rewritten in Derw as an example of Derw" ],
+        p [ ] [ ] [ a [ ] [ attribute "href" "http://www.szcz.org/jeopardyheatmap.html" ] [ text "Original is here." ] ],
+        p [ ] [ ] [ a [ ] [ attribute "href" "https://github.com/msszczep/jeopardy-heatmap/" ] [ text "Copy of Elm source code is here." ] ],
+        p [ ] [ ] [ a [ ] [ attribute "href" "https://github.com/derw-lang/examples/" ] [ text "Copy of Derw source code is here." ] ],
+        p [ ] [ ] [ stats model ],
+        div [ ] [
+            style_ "display" "grid",
+            style_ "grid-template-columns" "auto auto auto auto auto auto",
+            style_ "padding" "10px",
+            style_ "width" "80%"
+        ] (List.map makeRectangle (Dict.toList model))
+    ]
+
+root: any
+root =
+    document.getElementById "root"
+
+main: RunningProgram Model Msg
+main =
+    program {
+        initialModel: initModel,
+        update: update,
+        view: view,
+        root: root
+    }
