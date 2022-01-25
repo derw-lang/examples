@@ -1,7 +1,11 @@
 import "../derw-packages/derw-lang/html/src/Html" exposing ( HtmlNode, RunningProgram, div, button, input, a, h3, p, onInput, onClick, text, program, attribute, style_ )
+
 import "../derw-packages/derw-lang/stdlib/src/String" exposing ( split, join, fromNumber )
+
 import "../derw-packages/derw-lang/stdlib/src/List" as List
+
 import "../derw-packages/derw-lang/stdlib/src/Maybe" as Maybe
+
 import "../derw-packages/derw-lang/stdlib/src/Dict" as Dict
 
 type AnswerStatus =
@@ -16,12 +20,10 @@ type alias Model = {
 initModel: Model
 initModel =
     [ 1..30 ]
-        |> List.map (\index ->
-            {
-                key: index,
-                value: Unread
-            }
-        )
+        |> List.map (\index -> {
+        key: index,
+        value: Unread
+    })
         |> Dict.fromList
 
 type Msg =
