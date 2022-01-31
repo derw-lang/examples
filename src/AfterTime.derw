@@ -1,0 +1,58 @@
+import "../derw-packages/derw-lang/html/src/Html" exposing ( HtmlNode, RunningProgram, div, button, input, a, h3, p, onInput, onClick, text, programWithSend, attribute, style_ )
+
+import "../derw-packages/derw-lang/stdlib/src/Task" as Task
+
+type alias Model = {
+    message: string
+}
+
+type Msg =
+    Noop
+    | NewMessage
+    | SetNewMessage { value: string }
+
+view: Model -> HtmlNode Msg
+view model =
+    div [ ] [ ] [
+        button [ onClick (\x -> NewMessage) ] [ ] [ text "Click here for something new" ],
+        text model.message
+    ]
+
+update: Msg -> Model -> (Msg -> void) -> Model
+update msg model send =
+    case msg of
+        Noop ->
+            model
+        SetNewMessage { value } ->
+            { ...model, message: value }
+        NewMessage ->
+            let
+                newValue: string
+                newValue =
+                    if model.message == "New" then
+                        "Out with the new, in with the old"
+                    else
+                        "New"
+
+                something: any
+                something =
+                    Task.runTask (Task.after (\_ -> send (SetNewMessage { value: newValue })) 3000)
+            in
+                model
+
+initialModel: Model
+initialModel =
+    { message: "Start" }
+
+root: any
+root =
+    document.getElementById "root"
+
+main: RunningProgram Model Msg
+main =
+    programWithSend {
+        initialModel: initialModel,
+        view: view,
+        update: update,
+        root: root
+    }
