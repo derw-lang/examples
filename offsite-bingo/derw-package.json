@@ -1,0 +1,9 @@
+{
+    "name": "offsite-bingo",
+    "exposing": [],
+    "dependencies": {
+        "derw-lang/stdlib": "main",
+        "derw-lang/html": "main",
+        "derw-lang/web": "main"
+    }
+}

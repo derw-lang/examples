@@ -1,0 +1,296 @@
+import "../derw-packages/derw-lang/html/src/Html" exposing ( RunningProgram, HtmlNode, div, button, text, program, class_, onClick )
+import "../derw-packages/derw-lang/stdlib/src/Dict" as Dict
+import "../derw-packages/derw-lang/stdlib/src/List" as List
+import "../derw-packages/derw-lang/stdlib/src/Maybe" exposing ( Maybe, Just, Nothing )
+import "../derw-packages/derw-lang/stdlib/src/Random" as Random
+import "../derw-packages/derw-lang/stdlib/src/String" as String
+import "../derw-packages/derw-lang/web/src/LocalStorage" as LocalStorage
+
+wordSet: List string
+wordSet =
+    [
+        "agile",
+        "innovation",
+        "reorg",
+        "sprint",
+        "collaboration",
+        "multi displine",
+        "ambition",
+        "empower",
+        "team of teams",
+        "core",
+        "brands",
+        "revolution",
+        "impact",
+        "reach",
+        "audience",
+        "personalization",
+        "must win battles",
+        "OKRs",
+        "ideation",
+        "javascript",
+        "big data",
+        "algorithm",
+        "curation",
+        "management",
+        "sales",
+        "adverts",
+        "trust the process",
+        "going forward",
+        "growth",
+        "the future",
+        "stronger together"
+    ]
+
+type WordState =
+    Unclicked
+    | Clicked
+
+type alias Model = {
+    words: any
+}
+
+type alias ListItem = {
+    key: string,
+    value: WordState
+}
+
+wordSetWithState: List ListItem
+wordSetWithState =
+    List.map (\x -> {
+        key: x,
+        value: Unclicked
+    }) wordSet
+
+getStoredWords: any -> Maybe string
+getStoredWords any_ =
+    LocalStorage.getItem "words"
+
+wordStateFromString: string -> WordState
+wordStateFromString str =
+    case str of
+        "clicked" ->
+            Clicked
+
+        default ->
+            Unclicked
+
+listItemFromString: string -> ListItem
+listItemFromString str =
+    let
+        split: List string
+        split =
+            String.split "=" str
+    in
+        if split.length == 2 then
+            {
+                key: split[0],
+                value: wordStateFromString split[1]
+            }
+        else
+            {
+                key: "",
+                value: Unclicked
+            }
+
+loadFromLocalStorage: any -> any
+loadFromLocalStorage _any =
+    case getStoredWords 0 of
+        Nothing ->
+            let
+                newWords: any
+                newWords =
+                    wordSetWithState
+                        |> Random.choice 25
+                        |> Dict.fromList
+
+                store: any
+                store =
+                    saveToLocalStorage newWords
+            in
+                newWords
+
+        Just { value } ->
+            value
+                |> String.split "&"
+                |> List.map listItemFromString
+                |> Dict.fromList
+
+initialModel: Model
+initialModel =
+    { words: loadFromLocalStorage 0 }
+
+type Msg =
+    Noop
+    | Click { key: string }
+    | Regenerate
+
+click: Maybe WordState -> Maybe WordState
+click maybeState =
+    case maybeState of
+        Nothing ->
+            Nothing
+
+        Just { value } ->
+            case value of
+                Unclicked ->
+                    Just { value: Clicked }
+
+                Clicked ->
+                    Just { value: Unclicked }
+
+wordToStorageFormat: ListItem -> string
+wordToStorageFormat item =
+    case item.value of
+        Clicked ->
+            `${item.key}=clicked`
+
+        Unclicked ->
+            `${item.key}=unclicked`
+
+saveToLocalStorage: any -> void
+saveToLocalStorage words =
+    Dict.toList words
+        |> List.map wordToStorageFormat
+        |> String.join "&"
+        |> LocalStorage.setItem "words"
+
+update: Msg -> Model -> Model
+update msg model =
+    case msg of
+        Noop ->
+            model
+
+        Click { key } ->
+            let
+                updatedWords: any
+                updatedWords =
+                    Dict.update key click model.words
+
+                blank: any
+                blank =
+                    saveToLocalStorage updatedWords
+            in
+                { words: updatedWords }
+
+        Regenerate ->
+            let
+                emptyLocalStorage: void
+                emptyLocalStorage =
+                    LocalStorage.removeItem "words"
+            in
+                { words: loadFromLocalStorage 0 }
+
+viewCell: ListItem -> HtmlNode Msg
+viewCell item =
+    let
+        className: string
+        className =
+            case item.value of
+                Unclicked ->
+                    "unclicked"
+
+                Clicked ->
+                    "clicked"
+    in
+        div [ onClick (\x -> Click { key: item.key }) ] [
+            class_ "cell",
+            class_ className
+        ] [ div [ ] [ ] [ text item.key ] ]
+
+viewBingoCell: any -> string -> number -> HtmlNode Msg
+viewBingoCell words letter index =
+    let
+        winningClass: string
+        winningClass =
+            if isColumnComplete words index then
+                "you-got-it"
+            else
+                ""
+    in
+        div [ ] [
+            class_ "cell",
+            class_ "bingo",
+            class_ winningClass
+        ] [ div [ ] [ ] [ text letter ] ]
+
+bingoRow: any -> List (HtmlNode Msg)
+bingoRow words =
+    [
+        "B",
+        "I",
+        "N",
+        "G",
+        "O"
+    ]
+        |> List.indexedMap (\letter index -> viewBingoCell words letter index)
+
+wordStateToBoolean: WordState -> boolean
+wordStateToBoolean state =
+    case state of
+        Clicked ->
+            true
+
+        Unclicked ->
+            false
+
+isColumnComplete: any -> number -> boolean
+isColumnComplete words columnIndex =
+    let
+        wordsAsList: List ListItem
+        wordsAsList =
+            Dict.toList words
+
+        sumColumn: number -> number
+        sumColumn x =
+            x + columnIndex
+    in
+        [
+            0,
+            5,
+            10,
+            15,
+            20
+        ]
+            |> List.map sumColumn
+            |> List.map (\index -> wordsAsList[index])
+            |> List.filter (\item -> wordStateToBoolean item.value)
+            |> (\x -> x.length == 5)
+
+viewRegenerate: HtmlNode Msg
+viewRegenerate =
+    div [ ] [ class_ "regenerate-div" ] [ button [ onClick (\_ -> Regenerate) ] [ class_ "regenerate" ] [ text "Generate a new bingo card" ] ]
+
+view: Model -> HtmlNode Msg
+view model =
+    let
+        bingo: List (HtmlNode Msg)
+        bingo =
+            bingoRow model.words
+
+        wordGrid: List (HtmlNode Msg)
+        wordGrid =
+            Dict.toList model.words
+                |> List.map (\x -> viewCell x)
+
+        grid: List (HtmlNode Msg)
+        grid =
+            List.append bingo wordGrid
+    in
+        div [ ] [ ] [
+            viewRegenerate,
+            div [ ] [ class_ "grid" ] grid
+        ]
+
+root: any
+root =
+    document.getElementById "root"
+
+main: RunningProgram Model Msg
+main =
+    program {
+        initialModel: initialModel,
+        update: update,
+        view: view,
+        root: root
+    }
