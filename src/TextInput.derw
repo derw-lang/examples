@@ -1,8 +1,6 @@
 import "../derw-packages/derw-lang/html/src/Html" exposing ( HtmlNode, RunningProgram, div, button, input, onInput, onClick, text, program, attribute )
-
-import "../derw-packages/derw-lang/stdlib/src/String" exposing ( split, join )
-
 import "../derw-packages/derw-lang/stdlib/src/List" as List
+import "../derw-packages/derw-lang/stdlib/src/String" exposing ( split, join )
 
 type alias Model = {
     content: string

@@ -1,5 +1,4 @@
 import "../derw-packages/derw-lang/html/src/Html" exposing ( HtmlNode, RunningProgram, div, button, input, a, h3, p, onInput, onClick, text, programWithSend, attribute, style_ )
-
 import "../derw-packages/derw-lang/stdlib/src/Task" as Task
 
 type alias Model = {
@@ -23,8 +22,10 @@ update msg model send =
     case msg of
         Noop ->
             model
+
         SetNewMessage { value } ->
             { ...model, message: value }
+
         NewMessage ->
             let
                 newValue: string
@@ -36,7 +37,8 @@ update msg model send =
 
                 something: any
                 something =
-                    Task.runTask (Task.after (\_ -> SetNewMessage { value: newValue } |> send) 3000)
+                    Task.runTask (Task.after (\_ -> SetNewMessage { value: newValue }
+                        |> send) 3000)
             in
                 model
 

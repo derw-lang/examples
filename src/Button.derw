@@ -1,5 +1,4 @@
 import "../derw-packages/derw-lang/html/src/Html" exposing ( HtmlNode, RunningProgram, div, button, onClick, text, program, attribute )
-
 import "../derw-packages/derw-lang/stdlib/src/String" exposing ( fromNumber )
 
 type alias Model = {
@@ -19,6 +18,7 @@ update msg model =
     case msg of
         Increment ->
             { value: model.value + 1 }
+
         Decrement ->
             { value: model.value - 1 }
 

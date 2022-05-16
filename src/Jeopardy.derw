@@ -1,12 +1,8 @@
 import "../derw-packages/derw-lang/html/src/Html" exposing ( HtmlNode, RunningProgram, div, button, input, a, h3, p, onInput, onClick, text, program, attribute, style_ )
-
-import "../derw-packages/derw-lang/stdlib/src/String" exposing ( split, join, fromNumber )
-
-import "../derw-packages/derw-lang/stdlib/src/List" as List
-
-import "../derw-packages/derw-lang/stdlib/src/Maybe" as Maybe
-
 import "../derw-packages/derw-lang/stdlib/src/Dict" as Dict
+import "../derw-packages/derw-lang/stdlib/src/List" as List
+import "../derw-packages/derw-lang/stdlib/src/Maybe" as Maybe
+import "../derw-packages/derw-lang/stdlib/src/String" exposing ( split, join, fromNumber )
 
 type AnswerStatus =
     Unread
@@ -48,8 +44,10 @@ update msg model =
     case msg of
         SetCorrect { value } ->
             Dict.update value (\x -> Maybe.map justCorrect x) model
+
         SetIncorrect { value } ->
             Dict.update value (\x -> Maybe.map justIncorrect x) model
+
         SetUnread { value } ->
             Dict.update value (\x -> Maybe.map justUnread x) model
 
@@ -58,8 +56,10 @@ getColor s =
     case s of
         Unread ->
             "blue"
+
         Correct ->
             "#52D017"
+
         Incorrect ->
             "red"
 
@@ -91,6 +91,7 @@ isCorrect answer =
     case answer of
         Correct ->
             true
+
         default ->
             false
 
@@ -99,6 +100,7 @@ isIncorrect answer =
     case answer of
         Incorrect ->
             true
+
         default ->
             false
 
@@ -107,6 +109,7 @@ isUnread answer =
     case answer of
         Unread ->
             true
+
         default ->
             false
 
