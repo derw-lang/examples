@@ -1,0 +1,104 @@
+import "../derw-packages/derw-lang/html/src/Html" as Html exposing ( HtmlNode, RunningProgram, div, text, program, attribute, class_ )
+
+type alias TopModel = {
+    number: number
+}
+
+topInitialModel: TopModel
+topInitialModel =
+    { number: 0 }
+
+type TopMsg =
+    Increment { number: number }
+    | Decrement { number: number }
+
+topUpdate: TopMsg -> TopModel -> (TopMsg -> void) -> TopModel
+topUpdate msg model send =
+    case msg of
+        Increment { number } ->
+            { ...model, number: model.number + number }
+
+        Decrement { number} ->
+            { ...model, number: model.number - number }
+
+topView: TopModel -> HtmlNode TopMsg
+topView model =
+    div [ ] [ class_ "top-number" ] [ text `${model.number}` ]
+
+topRoot: any
+topRoot =
+    document.getElementById "top-root"
+
+topMain: RunningProgram TopModel TopMsg
+topMain =
+    program {
+        initialModel: topInitialModel,
+        view: topView,
+        update: topUpdate,
+        root: topRoot
+    }
+
+type alias BottomModel = {
+    userNumber: string
+}
+
+bottomInitialModel: BottomModel
+bottomInitialModel =
+    { userNumber: "" }
+
+type BottomMsg =
+    ClickIncrement
+    | ClickDecrement
+    | SetUserNumber { number: string }
+
+update: BottomMsg -> BottomModel -> (BottomMsg -> void) -> BottomModel
+update msg model send =
+    case msg of
+        ClickIncrement ->
+            let
+                sendToTopMain: void
+                sendToTopMain =
+                    topMain.send (Increment { number: parseInt model.userNumber 10 })
+            in
+                model
+
+        ClickDecrement ->
+            let
+                sendToTopMain: void
+                sendToTopMain =
+                    topMain.send (Decrement { number: parseInt model.userNumber 10 })
+            in
+                model
+
+        SetUserNumber { number } ->
+            { ...model, userNumber: number }
+
+viewDec: HtmlNode BottomMsg
+viewDec =
+    Html.button [ Html.onClick (\_ -> ClickDecrement) ] [ ] [ text "-" ]
+
+viewInc: HtmlNode BottomMsg
+viewInc =
+    Html.button [ Html.onClick (\_ -> ClickIncrement) ] [ ] [ text "+" ]
+
+view: BottomModel -> HtmlNode BottomMsg
+view model =
+    div [ ] [  class_ "m"] [
+        div [] [] [ text "Click on the -/+ to increase or decrease the value above by the amount in the text field" ],
+        viewDec,
+        viewInc,
+        Html.input [ Html.onInput (\number -> SetUserNumber { number: number }) ] [ Html.attribute "value" model.userNumber ]
+    ]
+
+bottomRoot: any
+bottomRoot =
+    document.getElementById "bottom-root"
+
+bottomMain: RunningProgram BottomModel BottomMsg
+bottomMain =
+    program {
+        initialModel: bottomInitialModel,
+        view: view,
+        update: update,
+        root: bottomRoot
+    }
