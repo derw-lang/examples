@@ -36,7 +36,7 @@ update msg model send =
 
                 something: any
                 something =
-                    Task.runTask (Task.after (\_ -> send (SetNewMessage { value: newValue })) 3000)
+                    Task.runTask (Task.after (\_ -> SetNewMessage { value: newValue } |> send) 3000)
             in
                 model
 
