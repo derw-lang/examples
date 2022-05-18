@@ -83,8 +83,8 @@ viewInc =
 
 view: BottomModel -> HtmlNode BottomMsg
 view model =
-    div [ ] [  class_ "m"] [
-        div [] [] [ text "Click on the -/+ to increase or decrease the value above by the amount in the text field" ],
+    div [ ] [ class_ "m" ] [
+        div [ ] [ ] [ text "Click on the -/+ to increase or decrease the value above by the amount in the text field" ],
         viewDec,
         viewInc,
         Html.input [ Html.onInput (\number -> SetUserNumber { number: number }) ] [ Html.attribute "value" model.userNumber ]
