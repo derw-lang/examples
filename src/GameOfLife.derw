@@ -1,0 +1,332 @@
+import "../derw-packages/derw-lang/html/src/Html" exposing ( HtmlNode, RunningProgram, div, text, program, attribute, class_, canvas )
+import "../derw-packages/derw-lang/stdlib/src/List" as List
+import "../derw-packages/derw-lang/stdlib/src/Random" as Random
+import "../derw-packages/derw-lang/stdlib/src/Task" as Task
+import "..//derw-packages/derw-lang/web/src/Canvas" exposing ( draw, Rect, Shape )
+
+startingPoints: List Point
+startingPoints =
+    [
+        {
+            x: 10,
+            y: 10
+        },
+        {
+            x: 11,
+            y: 10
+        },
+        {
+            x: 12,
+            y: 10
+        },
+        {
+            x: 10,
+            y: 9
+        },
+        {
+            x: 11,
+            y: 9
+        },
+        {
+            x: 12,
+            y: 9
+        },
+        {
+            x: 11,
+            y: 11
+        },
+        {
+            x: 9,
+            y: 12
+        },
+        {
+            x: 10,
+            y: 12
+        },
+        {
+            x: 11,
+            y: 12
+        },
+        {
+            x: 12,
+            y: 12
+        },
+        {
+            x: 13,
+            y: 12
+        },
+        {
+            x: 10,
+            y: 13
+        },
+        {
+            x: 11,
+            y: 13
+        },
+        {
+            x: 12,
+            y: 13
+        }
+    ]
+
+type alias Model = {
+    grid: List (List boolean)
+}
+
+maxX: number
+maxX =
+    document.body.clientWidth
+
+maxXIn5: number
+maxXIn5 =
+    99
+
+maxY: number
+maxY =
+    document.body.clientHeight
+
+maxYIn5: number
+maxYIn5 =
+    99
+
+
+emptyRow: List (List boolean)
+emptyRow =
+    List.indexedMap (\row i -> List.indexedMap (\_ j -> isStartingPoint i j) [ 0..maxXIn5 ]) [ 0..maxYIn5 ]
+
+isStartingPointHelper: List Point -> number -> number -> boolean
+isStartingPointHelper xs i j =
+    case xs of
+        [] ->
+            false
+
+        first :: ys ->
+            if first.x == i && first.y == j then
+                true
+            else
+                isStartingPointHelper ys i j
+
+        default ->
+            false
+
+isStartingPoint: number -> number -> boolean
+isStartingPoint i j =
+    isStartingPointHelper startingPoints i j
+
+initialModel: Model
+initialModel =
+    { grid: emptyRow }
+
+type alias Point = {
+    x: number,
+    y: number
+}
+
+type Msg =
+    Noop | Tick
+
+boxColor: boolean -> string
+boxColor isAlive =
+    if isAlive then
+        "red"
+    else
+        "black"
+
+canvasBox: List (List boolean) -> number -> number -> Shape
+canvasBox grid i j =
+    Rect { config: {
+        x: i * 5,
+        y: j * 5,
+        width: 5,
+        height: 5,
+        color: boxColor grid[i][j]
+    } }
+
+neighbours: Point -> List Point
+neighbours point =
+    let
+        x: number
+        x =
+            point.x
+
+        y: number
+        y =
+            point.y
+
+        lessX: number
+        lessX =
+            x - 1
+
+        moreX: number
+        moreX =
+            x + 1
+
+        lessY: number
+        lessY =
+            y - 1
+
+        moreY: number
+        moreY =
+            y + 1
+
+        left: List Point
+        left =
+            [
+                {
+                    x: lessX,
+                    y: lessY
+                },
+                {
+                    x: lessX,
+                    y: y
+                },
+                {
+                    x: lessX,
+                    y: moreY
+                }
+            ]
+
+        middle: List Point
+        middle =
+            [
+                {
+                    x: x,
+                    y: lessY
+                },
+                { x: x, y: moreY }
+            ]
+
+        right: List Point
+        right =
+            [
+                {
+                    x: moreX,
+                    y: lessY
+                },
+                {
+                    x: moreX,
+                    y: y
+                },
+                { x: moreX, y: moreY }
+            ]
+    in
+        List.append left (List.append middle right)
+
+pointAt: List (List boolean) -> Point -> boolean
+pointAt grid point =
+    if point.x < 0 || point.x > maxXIn5 || point.y < 0 || point.y > maxYIn5 then
+        false
+    else
+        grid[point.x][point.y]
+
+step: List (List boolean) -> Point -> boolean
+step grid point =
+    let
+        livingNeighbours: number
+        livingNeighbours =
+            neighbours point
+                |> List.filter (\x -> pointAt grid x)
+                |> List.length
+
+        isAlive: boolean
+        isAlive =
+            pointAt grid point
+    in
+        if isAlive then
+            if livingNeighbours < 2 then
+                false
+            else
+                if livingNeighbours == 2 || livingNeighbours == 3 then
+                    true
+                else
+                    false
+        else
+            if livingNeighbours == 3 then
+                true
+            else
+                false
+
+update: Msg -> Model -> (Msg -> void) -> Model
+update msg model send =
+    case msg of
+        Noop ->
+            let
+                canvasElement: any
+                canvasElement =
+                    document.getElementById "canvas"
+
+                drawn: any
+                drawn =
+                    List.map (\i -> List.map (\j -> draw { canvas: canvasElement } (canvasBox model.grid i j)) [ 0..maxXIn5 ]) [ 0..maxYIn5 ]
+
+                nextTick: void
+                nextTick =
+                    Task.after (\_ -> send Tick) 500
+                        |> Task.runTask
+            in
+                model
+
+        Tick ->
+            let
+                canvasElement: any
+                canvasElement =
+                    document.getElementById "canvas"
+
+                drawn: any
+                drawn =
+                    List.map (\i -> List.map (\j -> draw { canvas: canvasElement } (canvasBox model.grid i j)) [ 0..maxXIn5 ]) [ 0..maxYIn5 ]
+
+                nextTick: void
+                nextTick =
+                    Task.after (\_ -> send Tick) 500
+                        |> Task.runTask
+
+                randomX: number
+                randomX =
+                    Random.randomInt 0 99
+
+                randomY: number
+                randomY =
+                    Random.randomInt 0 99
+
+                isRandom: boolean -> number -> number -> boolean
+                isRandom current i j =
+                    if current then
+                        true
+                    else
+                        i == randomX && j == randomY
+
+                makeAlive: List (List boolean)
+                makeAlive =
+                    List.indexedMap (\row i -> List.indexedMap (\value j -> step model.grid {
+                        x: i,
+                        y: j
+                    }) row) model.grid
+            in
+                { grid: makeAlive }
+
+view: Model -> HtmlNode Msg
+view model =
+    canvas [ ] [
+        attribute "id" "canvas",
+        attribute "width" `${document.body.clientWidth}`,
+        attribute "height" `${document.body.clientHeight}`
+    ] [ ]
+
+root: any
+root =
+    document.getElementById "root"
+
+main: RunningProgram Model Msg
+main =
+    program {
+        initialModel: initialModel,
+        view: view,
+        update: update,
+        root: root
+    }
+
+initialTick: void
+initialTick =
+    Task.after (\_ -> main.send Noop) 5
+        |> Task.runTask

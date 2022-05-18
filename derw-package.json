@@ -3,6 +3,7 @@
     "exposing": [],
     "dependencies": {
         "derw-lang/html": "main",
-        "derw-lang/stdlib": "main"
+        "derw-lang/stdlib": "main",
+        "derw-lang/web": "main"
     }
 }
