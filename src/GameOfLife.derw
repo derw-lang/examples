@@ -1,8 +1,12 @@
-import "../derw-packages/derw-lang/html/src/Html" exposing ( HtmlNode, RunningProgram, div, text, program, attribute, class_, canvas )
-import "../derw-packages/derw-lang/stdlib/src/List" as List
-import "../derw-packages/derw-lang/stdlib/src/Random" as Random
-import "../derw-packages/derw-lang/stdlib/src/Task" as Task
 import "..//derw-packages/derw-lang/web/src/Canvas" exposing ( draw, Rect, Shape )
+import "../derw-packages/derw-lang/html/src/Html" as Html exposing ( HtmlNode, RunningProgram, div, text, program, attribute, class_, canvas )
+import "../derw-packages/derw-lang/stdlib/src/List" as List
+import "../derw-packages/derw-lang/stdlib/src/Maybe" as Maybe
+import "../derw-packages/derw-lang/stdlib/src/Number" as Number
+import "../derw-packages/derw-lang/stdlib/src/Random" as Random
+import "../derw-packages/derw-lang/stdlib/src/String" as String
+import "../derw-packages/derw-lang/stdlib/src/Task" as Task
+import "./GameOfLife_kernel" as Kernel
 
 startingPoints: List Point
 startingPoints =
@@ -75,20 +79,29 @@ type alias Model = {
 
 maxX: number
 maxX =
-    document.body.clientWidth
+    document.body.clientHeight
+
+five: number
+five =
+    maxX / 5
 
 maxXIn5: number
 maxXIn5 =
-    99
+    String.split "." `${five}`
+        |> (\x -> Maybe.withDefault 100 (Number.parseInt x[0] 10))
 
 maxY: number
 maxY =
-    document.body.clientHeight
+    document.body.clientWidth
+
+fiveY: number
+fiveY =
+    maxY / 5
 
 maxYIn5: number
 maxYIn5 =
-    99
-
+    String.split "." `${fiveY}`
+        |> (\x -> Maybe.withDefault 100 (Number.parseInt x[0] 10))
 
 emptyRow: List (List boolean)
 emptyRow =
@@ -123,7 +136,9 @@ type alias Point = {
 }
 
 type Msg =
-    Noop | Tick
+    Noop
+    | Tick
+    | Click { event: any }
 
 boxColor: boolean -> string
 boxColor isAlive =
@@ -193,7 +208,10 @@ neighbours point =
                     x: x,
                     y: lessY
                 },
-                { x: x, y: moreY }
+                {
+                    x: x,
+                    y: moreY
+                }
             ]
 
         right: List Point
@@ -207,14 +225,17 @@ neighbours point =
                     x: moreX,
                     y: y
                 },
-                { x: moreX, y: moreY }
+                {
+                    x: moreX,
+                    y: moreY
+                }
             ]
     in
         List.append left (List.append middle right)
 
 pointAt: List (List boolean) -> Point -> boolean
 pointAt grid point =
-    if point.x < 0 || point.x > maxXIn5 || point.y < 0 || point.y > maxYIn5 then
+    if point.x < 0 || point.x >= grid.length || point.y < 0 || point.y >= grid[0].length then
         false
     else
         grid[point.x][point.y]
@@ -240,11 +261,26 @@ step grid point =
                     true
                 else
                     false
+
+
         else
             if livingNeighbours == 3 then
                 true
             else
                 false
+
+render: Model -> void
+render model =
+    let
+        canvasElement: any
+        canvasElement =
+            document.getElementById "canvas"
+
+        drawn: any
+        drawn =
+            List.map (\i -> List.map (\j -> draw { canvas: canvasElement } (canvasBox model.grid i j)) [ 0..maxXIn5 ]) [ 0..maxYIn5 ]
+    in
+        undefined
 
 update: Msg -> Model -> (Msg -> void) -> Model
 update msg model send =
@@ -261,24 +297,20 @@ update msg model send =
 
                 nextTick: void
                 nextTick =
-                    Task.after (\_ -> send Tick) 500
+                    Task.after (\_ -> send Tick) 50
                         |> Task.runTask
             in
                 model
 
         Tick ->
             let
-                canvasElement: any
-                canvasElement =
-                    document.getElementById "canvas"
-
-                drawn: any
-                drawn =
-                    List.map (\i -> List.map (\j -> draw { canvas: canvasElement } (canvasBox model.grid i j)) [ 0..maxXIn5 ]) [ 0..maxYIn5 ]
+                renderer: void
+                renderer =
+                    render model
 
                 nextTick: void
                 nextTick =
-                    Task.after (\_ -> send Tick) 500
+                    Task.after (\_ -> send Tick) 200
                         |> Task.runTask
 
                 randomX: number
@@ -305,13 +337,56 @@ update msg model send =
             in
                 { grid: makeAlive }
 
+        Click { event } ->
+            let
+                blank: void
+                blank =
+                    console.log event
+
+                x: number
+                x =
+                    toClosestFive event.clientX
+
+                y: number
+                y =
+                    toClosestFive event.clientY
+
+                renderer: void
+                renderer =
+                    render { grid: clickOn x y model.grid }
+            in
+                { grid: clickOn x y model.grid }
+
+maybe: number -> number -> number -> number -> boolean -> boolean
+maybe i j x y value =
+    if i == x && j == y then
+        true
+    else
+        value
+
+clickOn: number -> number -> List (List boolean) -> any
+clickOn x y grid =
+    List.indexedMap (\row i -> List.indexedMap (\value j -> maybe i j x y value) row) grid
+
+toClosestFive: number -> number
+toClosestFive x =
+    x / 5
+        |> Math.round
+        |> (\y -> y * 5)
+
 view: Model -> HtmlNode Msg
 view model =
-    canvas [ ] [
-        attribute "id" "canvas",
-        attribute "width" `${document.body.clientWidth}`,
-        attribute "height" `${document.body.clientHeight}`
-    ] [ ]
+    let
+        runner: void
+        runner =
+            Task.after (\_ -> render model) 5
+                |> Task.runTask
+    in
+        canvas [ Html.onClick (\event -> Click { event: event }) ] [
+            attribute "id" "canvas",
+            attribute "width" `${document.body.clientWidth}`,
+            attribute "height" `${document.body.clientHeight}`
+        ] [ ]
 
 root: any
 root =
