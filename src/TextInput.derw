@@ -42,7 +42,7 @@ view model =
 
 root: any
 root =
-    document.getElementById "root"
+    document.getElementById "textinput-root"
 
 main: RunningProgram Model Msg
 main =

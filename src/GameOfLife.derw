@@ -390,7 +390,7 @@ view model =
 
 root: any
 root =
-    document.getElementById "root"
+    document.getElementById "gameoflife-root"
 
 main: RunningProgram Model Msg
 main =

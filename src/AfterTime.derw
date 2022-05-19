@@ -48,7 +48,7 @@ initialModel =
 
 root: any
 root =
-    document.getElementById "root"
+    document.getElementById "aftertime-root"
 
 main: RunningProgram Model Msg
 main =

@@ -27,7 +27,7 @@ topView model =
 
 topRoot: any
 topRoot =
-    document.getElementById "top-root"
+    document.getElementById "duality-top-root"
 
 topMain: RunningProgram TopModel TopMsg
 topMain =
@@ -92,7 +92,7 @@ view model =
 
 bottomRoot: any
 bottomRoot =
-    document.getElementById "bottom-root"
+    document.getElementById "duality-bottom-root"
 
 bottomMain: RunningProgram BottomModel BottomMsg
 bottomMain =

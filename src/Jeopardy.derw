@@ -159,7 +159,7 @@ view model =
 
 root: any
 root =
-    document.getElementById "root"
+    document.getElementById "jeopardy-root"
 
 main: RunningProgram Model Msg
 main =
