@@ -1,0 +1,65 @@
+import "../derw-packages/derw-lang/html/src/Html" as Html exposing ( HtmlNode, RunningProgram, div, text, program, attribute, class_, onClick, button )
+import "../derw-packages/derw-lang/stdlib/src/List" as List
+import "../derw-packages/derw-lang/stdlib/src/String" exposing (split, join)
+
+exposing (initialModel, view)
+
+type alias Model = {
+    text: string
+}
+
+initialModel: Model
+initialModel =
+    { text: "Hello" }
+
+type Msg =
+    Noop
+    | Flip
+
+update: Msg -> Model -> (Msg -> void) -> Model
+update msg model send =
+    case msg of
+        Flip ->
+            { text: reverse model.text }
+        Noop ->
+            model
+
+
+reverse: string -> string
+reverse str =
+    split "" str
+        |> List.reverse
+        |> join ""
+
+
+view: Model -> HtmlNode Msg
+view model =
+    div [ ] [ ] [ button [ onClick (\_ -> Flip )] [] [ text "Flip the message" ], text model.text ]
+
+main: void -> RunningProgram Model Msg
+main _ =
+    let
+        p: RunningProgram Model Msg
+        p = program {
+            initialModel: initialModel,
+            view: view,
+            update: update,
+            root: "hydration"
+        }
+
+        root: any
+        root =
+            document.getElementById "root"
+
+        runHydration: void
+        runHydration =
+            Html.hydrate p root
+    in
+        p
+
+runMain: any
+runMain =
+    if globalThis.document == undefined then
+        undefined
+    else
+        main()
