@@ -50,11 +50,10 @@ main _ =
         root: any
         root =
             document.getElementById "root"
-
-        runHydration: void
-        runHydration =
-            Html.hydrate p root
     in
+    do
+        Html.hydrate p root
+    return
         p
 
 runMain: any

@@ -1411,7 +1411,7 @@ ${whitespace}</${node3.tag}>`;
       root: "hydration"
     });
     const root = document.getElementById("root");
-    const runHydration = hydrate2(p2, root);
+    hydrate2(p2, root);
     return p2;
   }
   var runMain = globalThis.document === void 0 ? void 0 : main2();
