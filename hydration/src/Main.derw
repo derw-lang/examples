@@ -38,7 +38,7 @@ view model =
 
 main: void -> RunningProgram Model Msg
 main _ =
-    let
+    do
         p: RunningProgram Model Msg
         p = program {
             initialModel: initialModel,
@@ -50,8 +50,7 @@ main _ =
         root: any
         root =
             document.getElementById "root"
-    in
-    do
+
         Html.hydrate p root
     return
         p
