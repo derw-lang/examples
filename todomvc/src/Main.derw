@@ -2,6 +2,7 @@ import "../derw-packages/derw-lang/html/src/Html" as Html exposing ( HtmlNode, R
 import "../derw-packages/derw-lang/stdlib/src/List" as List
 import "../derw-packages/derw-lang/stdlib/src/String" as String
 import "../derw-packages/derw-lang/stdlib/src/Number" as Number
+import "../derw-packages/derw-lang/stdlib/src/Task" as Task
 import "../derw-packages/derw-lang/stdlib/src/Maybe" as M exposing (Maybe, Just, Nothing)
 import "../derw-packages/derw-lang/web/src/LocalStorage" as LocalStorage
 
@@ -42,6 +43,9 @@ type Msg =
     | SetFilterMode { mode: FilterMode }
     | ClearCompleted
     | Edit { item: ListItem }
+    | CancelEdit
+    | Focus
+    | Save { item: ListItem }
 
 toggleListItem: ListItem -> ListItem -> ListItem
 toggleListItem itemToToggle maybeItem =
@@ -216,43 +220,129 @@ update msg model send =
                 { ...model, list: updatedItems }
 
         Edit { item } ->
-            { ...model, editing: Just { value: item }}
+            let
+                focus: void
+                focus =
+                    Task.after (\_ -> send Focus) 30
+                        |> Task.runTask
+            in
+                { ...model, editing: Just { value: item } }
 
-onSubmit: any -> Msg
-onSubmit event =
-    do
-        globalThis.console.log event
+        CancelEdit ->
+            { ...model, editing: Nothing }
 
-        label: string
-        label =
-            event.target.value
-    return
-        if event.keyCode == 13 then
-            AddItem { label: event.target.value }
-        else
-            SetInput { input: label }
+        Focus ->
+            let
+                element: any
+                element =
+                    document.getElementById "editor"
+
+                focus: any
+                focus =
+                    element.focus()
+            in
+                model
+
+        Save { item } ->
+            let
+                updater: ListItem -> ListItem
+                updater currentItem =
+                    if currentItem.id == item.id then
+                        item
+                    else
+                        currentItem
+
+                updatedItems: List ListItem
+                updatedItems =
+                    List.map updater model.list
+
+                maybeWithoutItem: List ListItem
+                maybeWithoutItem =
+                    if item.label.trim() == "" then
+                        List.filter (\x -> x.id != item.id) updatedItems
+                    else
+                        updatedItems
+
+                store: void
+                store =
+                    storeListItems maybeWithoutItem
+            in
+                {...model, editing: Nothing, list: maybeWithoutItem }
+
 
 viewHeader: Model -> HtmlNode Msg
 viewHeader model =
-    Html.header [ ] [ class_ "header" ] [
-        Html.h1 [ ] [ ] [ text "todos" ],
-        Html.input [ Html.onWithOptions "keydown" onSubmit false false ] [
-            class_ "new-todo",
-            Html.attribute "placeholder" "What needs to be done?",
-            Html.attribute "autofocus" "true",
-            Html.attribute "value" model.input
+    let
+        onKeydown: any -> Msg
+        onKeydown event =
+            if event.key == "Enter" then
+                AddItem { label: event.target.value }
+            else
+                SetInput { input: event.target.value }
+    in
+        Html.header [ ] [ class_ "header" ] [
+            Html.h1 [ ] [ ] [ text "todos" ],
+            Html.input [ Html.onWithOptions "keydown" onKeydown false false ] [
+                class_ "new-todo",
+                Html.attribute "placeholder" "What needs to be done?",
+                Html.attribute "autofocus" "true",
+                Html.attribute "value" model.input
+            ]
         ]
-    ]
 
-viewListItem: ListItem -> HtmlNode Msg
-viewListItem item =
+
+viewListItem: Model -> ListItem -> HtmlNode Msg
+viewListItem model item =
     let
         className: string
         className =
-            if item.completed then
-                "completed"
+            case model.editing of
+                Just { value } ->
+                    if value.id == item.id then
+                        "editing"
+                    else
+                        if item.completed then
+                            "completed"
+                        else
+                            ""
+                Nothing ->
+                    if item.completed then
+                        "completed"
+                    else
+                        ""
+
+        editingText: string
+        editingText =
+            case model.editing of
+                Just { value } ->
+                    value.label
+
+                Nothing ->
+                    ""
+
+        viewItemLabel: HtmlNode Msg
+        viewItemLabel =
+            Html.label [ Html.onWithOptions "dblclick" (\_ -> Edit { item: item }) false false ] [ ] [ text item.label ]
+
+        onEdit: any -> Msg
+        onEdit event =
+            Edit { item: { ...item, label: event.target.value } }
+
+        onSave: any -> Msg
+        onSave event =
+            case model.editing of
+                Nothing ->
+                    Save { item: item }
+                Just { value } ->
+                    Save { item: { ...value, label: event.target.value } }
+
+        onKeydown: any -> Msg
+        onKeydown event =
+            if event.key == "Enter" then
+                onSave event
             else
-                ""
+                Edit { item: { ...item, label: event.target.value } }
+
     in
         Html.li [ ] [ class_ className ] [
             div [ ] [ class_ "view" ] [
@@ -261,12 +351,13 @@ viewListItem item =
                     Html.attribute "type" "checkbox",
                     Html.booleanAttribute "checked" item.completed
                 ],
-                Html.label [ ] [ ] [ text item.label ],
+                viewItemLabel,
                 Html.button [ Html.onClick (\_ -> DestroyItem { item: item }) ] [ class_ "destroy" ] [ ]
             ],
-            Html.input [ Html.onWithOptions "doubleclick" (\_ -> Edit { item: item }) false false ] [
+            Html.input [ Html.onWithOptions "keydown" onKeydown false false, Html.on "blur" onSave ] [
                 class_ "edit",
-                Html.attribute "value" "Hmm"
+                Html.attribute "id" "editor",
+                Html.attribute "value" editingText
             ]
         ]
 
@@ -289,7 +380,7 @@ viewList model =
         items =
             filteredItems model.filterMode model.list
     in
-        Html.ul [ ] [ class_ "todo-list" ] (List.map viewListItem items)
+        Html.ul [ ] [ class_ "todo-list" ] (List.map (\item -> viewListItem model item) items)
 
 viewMain: Model -> HtmlNode Msg
 viewMain model =
@@ -386,13 +477,28 @@ main =
         filterMode: FilterMode
         filterMode =
             urlParser window.location.hash
+
+        p: RunningProgram Model Msg
+        p =
+            program {
+                initialModel: { ...initialModel, filterMode: filterMode },
+                view: view,
+                update: update,
+                root: root
+            }
+
+        canceller: any -> void
+        canceller event =
+            if event.key == "Escape" then
+                p.send CancelEdit
+            else
+                undefined
+
+        attach: void
+        attach =
+            document.addEventListener "keydown" canceller
     in
-        program {
-            initialModel: { ...initialModel, filterMode: filterMode },
-            view: view,
-            update: update,
-            root: root
-        }
+        p
 
 urlParser: string -> FilterMode
 urlParser path =
