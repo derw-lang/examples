@@ -5,22 +5,26 @@ import "../derw-packages/derw-lang/stdlib/src/String" exposing (split, join)
 exposing (initialModel, view)
 
 type alias Model = {
-    text: string
+    text: string,
+    state: boolean
 }
 
 initialModel: Model
 initialModel =
-    { text: "Hello" }
+    { text: "Hello", state: true }
 
 type Msg =
     Noop
     | Flip
+    | Click
 
 update: Msg -> Model -> (Msg -> void) -> Model
 update msg model send =
     case msg of
         Flip ->
-            { text: reverse model.text }
+            { ...model, text: reverse model.text }
+        Click ->
+            { ...model, state: !model.state }
         Noop ->
             model
 
@@ -31,10 +35,17 @@ reverse str =
         |> List.reverse
         |> join ""
 
+checkbox: Model -> HtmlNode Msg
+checkbox model =
+    Html.input [ Html.onWithOptions "click" (\_ -> Click) false false ] [ Html.attribute "type" "checkbox", Html.booleanAttribute "checked" model.state ]
 
 view: Model -> HtmlNode Msg
 view model =
-    div [ ] [ ] [ button [ onClick (\_ -> Flip )] [] [ text "Flip the message" ], text model.text ]
+    div [ ] [ ] [
+        div [] [] [ button [ onClick (\_ -> Flip )] [] [ text "Flip the message" ],
+        text model.text ],
+        checkbox model
+    ]
 
 main: void -> RunningProgram Model Msg
 main _ =

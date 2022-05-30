@@ -1,7 +1,9 @@
 (() => {
   var __create = Object.create;
   var __defProp = Object.defineProperty;
+  var __defProps = Object.defineProperties;
   var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __getOwnPropSymbols = Object.getOwnPropertySymbols;
   var __getProtoOf = Object.getPrototypeOf;
@@ -19,6 +21,7 @@
       }
     return a2;
   };
+  var __spreadProps = (a2, b2) => __defProps(a2, __getOwnPropDescs(b2));
   var __markAsModule = (target) => __defProp(target, "__esModule", { value: true });
   var __commonJS = (cb, mod) => function __require() {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
@@ -412,9 +415,9 @@
     "derw-packages/derw-lang/html/node_modules/@eeue56/coed/build/coed.js"(exports) {
       "use strict";
       Object.defineProperty(exports, "__esModule", { value: true });
-      exports.embed = exports.em = exports.dt = exports.dl = exports.div = exports.dialog = exports.dfn = exports.details = exports.del = exports.dd = exports.datalist = exports.data = exports.colgroup = exports.col = exports.code = exports.cite = exports.caption = exports.canvas = exports.button = exports.br = exports.body = exports.blockquote = exports.bdo = exports.bdi = exports.base = exports.b = exports.audio = exports.aside = exports.article = exports.area = exports.address = exports.abbr = exports.a = exports.program = exports.map = exports.triggerEvent = exports.buildTree = exports.hydrateNode = exports.hydrate = exports.flatRender = exports.render = exports.voidNode = exports.node = exports.text = exports.onInput = exports.on = exports.attribute = exports.none = exports.style_ = exports.class_ = void 0;
-      exports.ruby = exports.rtc = exports.rt = exports.rp = exports.rb = exports.q = exports.progress = exports.pre = exports.param = exports.p = exports.output = exports.option = exports.optgroup = exports.ol = exports.object = exports.noscript = exports.nav = exports.meter = exports.meta = exports.menuitem = exports.menu = exports.mark = exports.map_ = exports.main = exports.link = exports.li = exports.legend = exports.label = exports.keygen = exports.kbd = exports.ins = exports.input = exports.img = exports.iframe = exports.i = exports.html = exports.hr = exports.hgroup = exports.header = exports.head = exports.h6 = exports.h5 = exports.h4 = exports.h3 = exports.h2 = exports.h1 = exports.form = exports.footer = exports.figure = exports.fieldset = void 0;
-      exports.wbr = exports.video = exports.var_ = exports.ul = exports.u = exports.track = exports.tr = exports.title = exports.time = exports.thead = exports.th = exports.tfoot = exports.textarea = exports.template = exports.td = exports.tbody = exports.table = exports.sup = exports.summary = exports.sub = exports.style = exports.strong = exports.span = exports.source = exports.small = exports.select = exports.section = exports.script = exports.samp = exports.s = void 0;
+      exports.em = exports.dt = exports.dl = exports.div = exports.dialog = exports.dfn = exports.details = exports.del = exports.dd = exports.datalist = exports.data = exports.colgroup = exports.col = exports.code = exports.cite = exports.caption = exports.canvas = exports.button = exports.br = exports.body = exports.blockquote = exports.bdo = exports.bdi = exports.base = exports.b = exports.audio = exports.aside = exports.article = exports.area = exports.address = exports.abbr = exports.a = exports.program = exports.map = exports.triggerEvent = exports.buildTree = exports.hydrateNode = exports.hydrate = exports.flatRender = exports.render = exports.voidNode = exports.node = exports.text = exports.onInput = exports.on = exports.booleanAttribute = exports.attribute = exports.none = exports.style_ = exports.class_ = void 0;
+      exports.rtc = exports.rt = exports.rp = exports.rb = exports.q = exports.progress = exports.pre = exports.param = exports.p = exports.output = exports.option = exports.optgroup = exports.ol = exports.object = exports.noscript = exports.nav = exports.meter = exports.meta = exports.menuitem = exports.menu = exports.mark = exports.map_ = exports.main = exports.link = exports.li = exports.legend = exports.label = exports.keygen = exports.kbd = exports.ins = exports.input = exports.img = exports.iframe = exports.i = exports.html = exports.hr = exports.hgroup = exports.header = exports.head = exports.h6 = exports.h5 = exports.h4 = exports.h3 = exports.h2 = exports.h1 = exports.form = exports.footer = exports.figure = exports.fieldset = exports.embed = void 0;
+      exports.wbr = exports.video = exports.var_ = exports.ul = exports.u = exports.track = exports.tr = exports.title = exports.time = exports.thead = exports.th = exports.tfoot = exports.textarea = exports.template = exports.td = exports.tbody = exports.table = exports.sup = exports.summary = exports.sub = exports.style = exports.strong = exports.span = exports.source = exports.small = exports.select = exports.section = exports.script = exports.samp = exports.s = exports.ruby = void 0;
       var ts_core_1 = require_main();
       function class_3(str) {
         return {
@@ -438,7 +441,7 @@
         };
       }
       exports.none = none3;
-      function attribute3(key, value) {
+      function attribute4(key, value) {
         if (key === "style")
           return style_2(value.split(":")[0], value.split(":")[1]);
         return {
@@ -447,13 +450,23 @@
           value
         };
       }
-      exports.attribute = attribute3;
-      function on3(name, tagger) {
+      exports.attribute = attribute4;
+      function booleanAttribute3(key, value) {
+        return {
+          kind: "boolean",
+          key,
+          value
+        };
+      }
+      exports.booleanAttribute = booleanAttribute3;
+      function on3(name, tagger, stopPropagation = true, preventDefault = true) {
         return {
           name,
           tagger: (event) => {
-            if (event.stopPropagation) {
+            if (stopPropagation) {
               event.stopPropagation();
+            }
+            if (preventDefault) {
               event.preventDefault();
             }
             return tagger(event);
@@ -504,22 +517,22 @@
         const knownStringAttributes = {};
         const knownStyleAttributes = [];
         const otherAttributes = [];
-        attributes.forEach((attribute4) => {
-          switch (attribute4.kind) {
+        attributes.forEach((attribute5) => {
+          switch (attribute5.kind) {
             case "string":
-              if (!knownStringAttributes[attribute4.key]) {
-                knownStringAttributes[attribute4.key] = [];
+              if (!knownStringAttributes[attribute5.key]) {
+                knownStringAttributes[attribute5.key] = [];
               }
-              knownStringAttributes[attribute4.key].push(attribute4);
+              knownStringAttributes[attribute5.key].push(attribute5);
               break;
             case "style":
-              knownStyleAttributes.push(attribute4);
+              knownStyleAttributes.push(attribute5);
               break;
             default:
-              otherAttributes.push(attribute4);
+              otherAttributes.push(attribute5);
           }
         });
-        const combinedAttributes = otherAttributes.filter((attribute4) => attribute4.kind !== "none");
+        const combinedAttributes = otherAttributes.filter((attribute5) => attribute5.kind !== "none");
         Object.keys(knownStringAttributes).map((key) => {
           combinedAttributes.push(knownStringAttributes[key].reduce((acc, currentValue) => {
             if (key === "class") {
@@ -534,21 +547,23 @@
               acc.value = "";
             acc.value += currentValue.key + ":" + currentValue.value + ";";
             return acc;
-          }, attribute3("style", "")));
+          }, attribute4("style", "")));
         }
         return combinedAttributes;
       }
-      function renderAttribute(attribute4) {
-        switch (attribute4.kind) {
+      function renderAttribute(attribute5) {
+        switch (attribute5.kind) {
           case "string":
-            if (attribute4.value.indexOf('"') > 0) {
-              return `${attribute4.key}='${attribute4.value}'`;
+            if (attribute5.value.indexOf('"') > 0) {
+              return `${attribute5.key}='${attribute5.value}'`;
             }
-            return `${attribute4.key}="${attribute4.value}"`;
+            return `${attribute5.key}="${attribute5.value}"`;
           case "number":
-            return `${attribute4.key}=${attribute4.value}`;
+            return `${attribute5.key}=${attribute5.value}`;
           case "style":
             return "";
+          case "boolean":
+            return attribute5.value ? `${attribute5.key}="${attribute5.key}"` : "";
           case "none":
             return "";
         }
@@ -560,7 +575,8 @@
             return whitespace + node3.text;
           case "void":
           case "regular":
-            const attributes = (node3.attributes.length > 0 ? " " : "") + node3.attributes.map(renderAttribute).join(" ");
+            const renderedAttributes = node3.attributes.map(renderAttribute).join(" ");
+            const attributes = (renderedAttributes.length > 0 ? " " : "") + renderedAttributes;
             switch (node3.kind) {
               case "void":
                 return whitespace + `<${node3.tag}${attributes}>`;
@@ -638,8 +654,8 @@ ${whitespace}</${node3.tag}>`;
           case "void":
           case "regular": {
             const element = document.createElement(node3.tag);
-            node3.attributes.forEach((attribute4) => {
-              setAttributeOnElement(element, attribute4);
+            node3.attributes.forEach((attribute5) => {
+              setAttributeOnElement(element, attribute5);
             });
             node3.events.forEach((event) => {
               const listenerFunction = (data3) => {
@@ -665,6 +681,7 @@ ${whitespace}</${node3.tag}>`;
       }
       exports.buildTree = buildTree;
       function triggerEvent(eventName, payload, node3) {
+        payload = Object.assign({ stopPropagation: () => void 0, preventDefault: () => void 0 }, payload);
         switch (node3.kind) {
           case "text":
             return ts_core_1.Maybe.Nothing();
@@ -696,27 +713,40 @@ ${whitespace}</${node3.tag}>`;
         }
       }
       exports.map = map2;
-      function setAttributeOnElement(element, attribute4) {
-        switch (attribute4.kind) {
+      function setAttributeOnElement(element, attribute5) {
+        switch (attribute5.kind) {
           case "string":
           case "number":
-            const hasSameAttributeAlready = element.getAttribute(attribute4.key) === attribute4.value;
+            const hasSameAttributeAlready = element.getAttribute(attribute5.key) === attribute5.value;
             if (hasSameAttributeAlready)
-              return;
-            element[attribute4.key] = attribute4.value;
-            element.setAttribute(attribute4.key, attribute4.value);
-            return;
+              return true;
+            element[attribute5.key] = attribute5.value;
+            element.setAttribute(attribute5.key, attribute5.value);
+            return true;
           case "style":
             element.removeAttribute("style");
-            const styles = attribute4.value.split(";");
+            const styles = attribute5.value.split(";");
             for (var i3 = 0; i3 < styles.length; i3++) {
               const styleName = styles[i3].split(":")[0];
               const styleValue = styles[i3].split(":")[1];
               element.style[styleName] = styleValue;
             }
-            return;
+            return true;
+          case "boolean": {
+            if (attribute5.value) {
+              const hasSameAttributeAlready2 = element[attribute5.key] === true || element.getAttribute(attribute5.key) === attribute5.key;
+              if (hasSameAttributeAlready2)
+                return true;
+              element.setAttribute(attribute5.key, attribute5.key);
+            } else {
+              if (element.getAttribute(attribute5.key) === attribute5.key) {
+                element.removeAttribute(attribute5.key);
+              }
+            }
+            return true;
+          }
           case "none":
-            return;
+            return true;
         }
       }
       function patchFacts(previousTree, nextTree, elements) {
@@ -724,16 +754,17 @@ ${whitespace}</${node3.tag}>`;
           case "void":
           case "regular": {
             if (previousTree.kind === nextTree.kind) {
-              previousTree.attributes.filter((attribute4) => {
+              previousTree.attributes.filter((attribute5) => {
                 for (const nextAttribute of nextTree.attributes) {
                   let seen = false;
-                  if (attribute4.kind === nextAttribute.kind) {
+                  if (attribute5.kind === nextAttribute.kind) {
                     switch (nextAttribute.kind) {
                       case "number":
                       case "string": {
-                        seen = nextAttribute.key === attribute4.key;
+                        seen = nextAttribute.key === attribute5.key;
                         break;
                       }
+                      case "boolean":
                       case "style":
                         seen = true;
                     }
@@ -742,19 +773,21 @@ ${whitespace}</${node3.tag}>`;
                     return false;
                 }
                 return true;
-              }).forEach((attribute4) => {
-                switch (attribute4.kind) {
+              }).forEach((attribute5) => {
+                switch (attribute5.kind) {
                   case "number":
-                    elements.removeAttribute(attribute4.key);
+                    elements.removeAttribute(attribute5.key);
                   case "string":
-                    elements.removeAttribute(attribute4.key);
+                    elements.removeAttribute(attribute5.key);
+                  case "boolean":
+                    elements.removeAttribute(attribute5.key);
                   case "style":
                     elements.removeAttribute("style");
                 }
               });
             }
-            nextTree.attributes.forEach((attribute4) => {
-              setAttributeOnElement(elements, attribute4);
+            nextTree.attributes.forEach((attribute5) => {
+              setAttributeOnElement(elements, attribute5);
             });
             return;
           }
@@ -1087,10 +1120,10 @@ ${whitespace}</${node3.tag}>`;
         return voidNode("img", events, attributes);
       }
       exports.img = img2;
-      function input2(events, attributes) {
+      function input3(events, attributes) {
         return voidNode("input", events, attributes);
       }
-      exports.input = input2;
+      exports.input = input3;
       function ins2(events, attributes, children) {
         return node2("ins", events, attributes, children);
       }
@@ -1353,15 +1386,27 @@ ${whitespace}</${node3.tag}>`;
   function on2(name, tagger) {
     return coed.on(name, tagger);
   }
+  function onWithOptions(name, tagger, stopPropgation, preventDefault) {
+    return coed.on(name, tagger, stopPropgation, preventDefault);
+  }
   function onClick(fn) {
     return on2("click", fn);
   }
   var none2 = coed.none();
+  function attribute2(name, value) {
+    return coed.attribute(name, value);
+  }
+  function booleanAttribute2(name, value) {
+    return coed.booleanAttribute(name, value);
+  }
   function button2(events, attributes, children) {
     return coed.button(events, attributes, children);
   }
   function div2(events, attributes, children) {
     return coed.div(events, attributes, children);
+  }
+  function input2(events, attributes) {
+    return coed.input(events, attributes);
   }
 
   // derw-packages/derw-lang/stdlib/src/List.ts
@@ -1378,17 +1423,28 @@ ${whitespace}</${node3.tag}>`;
   }
 
   // src/Main.ts
-  var initialModel = { text: "Hello" };
+  var initialModel = {
+    text: "Hello",
+    state: true
+  };
   function Flip(args) {
     return __spreadValues({
       kind: "Flip"
+    }, args);
+  }
+  function Click(args) {
+    return __spreadValues({
+      kind: "Click"
     }, args);
   }
   function update(msg, model, send) {
     const _res108417 = msg;
     switch (_res108417.kind) {
       case "Flip": {
-        return { text: reverse2(model.text) };
+        return __spreadProps(__spreadValues({}, model), { text: reverse2(model.text) });
+      }
+      case "Click": {
+        return __spreadProps(__spreadValues({}, model), { state: !model.state });
       }
       case "Noop": {
         return model;
@@ -1398,10 +1454,15 @@ ${whitespace}</${node3.tag}>`;
   function reverse2(str) {
     return join("", reverse(split("", str)));
   }
+  function checkbox(model) {
+    return input2([onWithOptions("click", function(_) {
+      return Click({});
+    }, false, false)], [attribute2("type", "checkbox"), booleanAttribute2("checked", model.state)]);
+  }
   function view(model) {
-    return div2([], [], [button2([onClick(function(_) {
+    return div2([], [], [div2([], [], [button2([onClick(function(_) {
       return Flip({});
-    })], [], [text2("Flip the message")]), text2(model.text)]);
+    })], [], [text2("Flip the message")]), text2(model.text)]), checkbox(model)]);
   }
   function main2(_) {
     const p2 = program2({
