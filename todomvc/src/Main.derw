@@ -39,22 +39,18 @@ type Msg =
     | ToggleCompleted { item: ListItem }
     | DestroyItem { item: ListItem }
     | AddItem { label: string }
-    | SetInput { input: string }
+    | SetNewItemInput { input: string }
     | SetFilterMode { mode: FilterMode }
     | ClearCompleted
     | Edit { item: ListItem }
     | CancelEdit
-    | Focus
     | Save { item: ListItem }
+    | Focus
 
 toggleListItem: ListItem -> ListItem -> ListItem
 toggleListItem itemToToggle maybeItem =
     if itemToToggle.id == maybeItem.id then
-        {
-            id: maybeItem.id,
-            label: maybeItem.label,
-            completed: !maybeItem.completed
-        }
+        { ...maybeItem, completed: !maybeItem.completed }
     else
         maybeItem
 
@@ -72,28 +68,20 @@ storeListItems items =
 
 decodeItem: string -> Maybe ListItem
 decodeItem str =
-    let
-        split: List string
-        split =
-            String.split "-" str
-    in
-        case split of
-            [] ->
-                Nothing
+    case String.split "-" str of
+        id :: rest ->
+            case rest of
+                completed :: ys ->
+                    case Number.parseInt id 10 of
+                        Nothing ->
+                            Nothing
 
-            id :: rest ->
-                case rest of
-                    completed :: ys ->
-                        case Number.parseInt id 10 of
-                            Nothing ->
-                                Nothing
-
-                            Just { value } ->
-                                Just { value: { id: value, completed: completed == "true", label: String.join "-" ys } }
-                    default ->
-                        Nothing
-            default ->
-                Nothing
+                        Just { value } ->
+                            Just { value: { id: value, completed: completed == "true", label: String.join "-" ys } }
+                default ->
+                    Nothing
+        default ->
+            Nothing
 
 
 loadListItems: any -> List ListItem
@@ -119,8 +107,20 @@ max start xs =
                 max x ys
             else
                 max start ys
-        default -
+        default ->
             start
+
+filteredItems: FilterMode -> List ListItem -> List ListItem
+filteredItems filterMode items =
+    case filterMode of
+        All ->
+            items
+
+        Active ->
+            List.filter (\item -> !item.completed) items
+
+        Completed ->
+            List.filter (\item -> item.completed) items
 
 update: Msg -> Model -> (Msg -> void) -> Model
 update msg model send =
@@ -138,17 +138,13 @@ update msg model send =
                 store =
                     storeListItems updatedItems
             in
-                {...model, list: updatedItems }
+                { ...model, list: updatedItems }
 
         ToggleCompleted { item } ->
             let
-                toggler: ListItem -> ListItem
-                toggler x =
-                    toggleListItem item x
-
                 updatedItems: List ListItem
                 updatedItems =
-                    List.map toggler model.list
+                    List.map (\x -> toggleListItem item x) model.list
 
                 store: void
                 store =
@@ -201,7 +197,7 @@ update msg model send =
                         input: ""
                     }
 
-        SetInput { input } ->
+        SetNewItemInput { input } ->
             { ...model, input: input }
 
         SetFilterMode { mode } ->
@@ -278,7 +274,7 @@ viewHeader model =
             if event.key == "Enter" then
                 AddItem { label: event.target.value }
             else
-                SetInput { input: event.target.value }
+                SetNewItemInput { input: event.target.value }
     in
         Html.header [ ] [ class_ "header" ] [
             Html.h1 [ ] [ ] [ text "todos" ],
@@ -320,10 +316,6 @@ viewListItem model item =
                 Nothing ->
                     ""
 
-        viewItemLabel: HtmlNode Msg
-        viewItemLabel =
-            Html.label [ Html.onWithOptions "dblclick" (\_ -> Edit { item: item }) false false ] [ ] [ text item.label ]
-
         onEdit: any -> Msg
         onEdit event =
             Edit { item: { ...item, label: event.target.value } }
@@ -343,6 +335,9 @@ viewListItem model item =
             else
                 Edit { item: { ...item, label: event.target.value } }
 
+        viewItemLabel: HtmlNode Msg
+        viewItemLabel =
+            Html.label [ Html.onWithOptions "dblclick" (\_ -> Edit { item: item }) false false ] [ ] [ text item.label ]
     in
         Html.li [ ] [ class_ className ] [
             div [ ] [ class_ "view" ] [
@@ -360,18 +355,6 @@ viewListItem model item =
                 Html.attribute "value" editingText
             ]
         ]
-
-filteredItems: FilterMode -> List ListItem -> List ListItem
-filteredItems filterMode items =
-    case filterMode of
-        All ->
-            items
-
-        Active ->
-            List.filter (\item -> !item.completed) items
-
-        Completed ->
-            List.filter (\item -> item.completed) items
 
 viewList: Model -> HtmlNode Msg
 viewList model =
