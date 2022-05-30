@@ -1,0 +1,407 @@
+import "../derw-packages/derw-lang/html/src/Html" as Html exposing ( HtmlNode, RunningProgram, div, text, program, attribute, class_ )
+import "../derw-packages/derw-lang/stdlib/src/List" as List
+import "../derw-packages/derw-lang/stdlib/src/String" as String
+import "../derw-packages/derw-lang/stdlib/src/Number" as Number
+import "../derw-packages/derw-lang/stdlib/src/Maybe" as M exposing (Maybe, Just, Nothing)
+import "../derw-packages/derw-lang/web/src/LocalStorage" as LocalStorage
+
+type alias ListItem = {
+    id: number,
+    label: string,
+    completed: boolean
+}
+
+type FilterMode =
+    All
+    | Active
+    | Completed
+
+type alias Model = {
+    list: List ListItem,
+    input: string,
+    filterMode: FilterMode,
+    editing: Maybe ListItem
+}
+
+initialModel: Model
+initialModel =
+    {
+        list: loadListItems 0,
+        input: "",
+        filterMode: All,
+        editing: Nothing
+    }
+
+type Msg =
+    Noop
+    | ToggleAll { state: boolean }
+    | ToggleCompleted { item: ListItem }
+    | DestroyItem { item: ListItem }
+    | AddItem { label: string }
+    | SetInput { input: string }
+    | SetFilterMode { mode: FilterMode }
+    | ClearCompleted
+    | Edit { item: ListItem }
+
+toggleListItem: ListItem -> ListItem -> ListItem
+toggleListItem itemToToggle maybeItem =
+    if itemToToggle.id == maybeItem.id then
+        {
+            id: maybeItem.id,
+            label: maybeItem.label,
+            completed: !maybeItem.completed
+        }
+    else
+        maybeItem
+
+storeListItems: List ListItem -> void
+storeListItems items =
+    do
+        encodedItems: string
+        encodedItems =
+            List.map (\item -> `${item.id}-${item.completed}-${item.label}`) items
+                |> String.join "&"
+
+        LocalStorage.setItem "todomvc-derw" encodedItems
+    return
+        undefined
+
+decodeItem: string -> Maybe ListItem
+decodeItem str =
+    let
+        split: List string
+        split =
+            String.split "-" str
+    in
+        case split of
+            [] ->
+                Nothing
+
+            id :: rest ->
+                case rest of
+                    completed :: ys ->
+                        case Number.parseInt id 10 of
+                            Nothing ->
+                                Nothing
+
+                            Just { value } ->
+                                Just { value: { id: value, completed: completed == "true", label: String.join "-" ys } }
+                    default ->
+                        Nothing
+            default ->
+                Nothing
+
+
+loadListItems: any -> List ListItem
+loadListItems _ =
+    do
+        stored: string
+        stored =
+            LocalStorage.getItem "todomvc-derw"
+                |> M.withDefault ""
+
+        decodedItems: List ListItem
+        decodedItems =
+            String.split "&" stored
+                |> List.filterMap decodeItem
+    return
+        decodedItems
+
+max: number -> List number -> number
+max start xs =
+    case xs of
+        x::ys ->
+            if start < x then
+                max x ys
+            else
+                max start ys
+        default -
+            start
+
+update: Msg -> Model -> (Msg -> void) -> Model
+update msg model send =
+    case msg of
+        Noop ->
+            model
+
+        ToggleAll { state } ->
+            let
+                updatedItems: List ListItem
+                updatedItems =
+                    List.map (\x -> { ...x, completed: state } ) model.list
+
+                store: void
+                store =
+                    storeListItems updatedItems
+            in
+                {...model, list: updatedItems }
+
+        ToggleCompleted { item } ->
+            let
+                toggler: ListItem -> ListItem
+                toggler x =
+                    toggleListItem item x
+
+                updatedItems: List ListItem
+                updatedItems =
+                    List.map toggler model.list
+
+                store: void
+                store =
+                    storeListItems updatedItems
+            in
+                { ...model, list: updatedItems }
+
+        DestroyItem { item } ->
+            let
+                withoutItem: List ListItem
+                withoutItem =
+                    List.filter (\x -> x.id != item.id) model.list
+
+                store: void
+                store =
+                    storeListItems withoutItem
+            in
+                { ...model, list: withoutItem }
+
+        AddItem { label } ->
+            if label.trim() == "" then
+                model
+            else
+                let
+                    newId: number
+                    newId =
+                        List.map (\item -> item.id) model.list
+                            |> max 0
+                            |> (\x -> x + 1)
+
+                    newItem: ListItem
+                    newItem =
+                        {
+                            id: newId,
+                            label: label,
+                            completed: false
+                        }
+
+                    updatedItems: List ListItem
+                    updatedItems =
+                        newItem :: model.list
+
+                    store: void
+                    store =
+                        storeListItems updatedItems
+                in
+                    {
+                        ...model,
+                        list: updatedItems,
+                        input: ""
+                    }
+
+        SetInput { input } ->
+            { ...model, input: input }
+
+        SetFilterMode { mode } ->
+            { ...model, filterMode: mode }
+
+        ClearCompleted ->
+            let
+                updatedItems: List ListItem
+                updatedItems =
+                    filteredItems Active model.list
+
+                store: void
+                store =
+                    storeListItems updatedItems
+            in
+                { ...model, list: updatedItems }
+
+        Edit { item } ->
+            { ...model, editing: Just { value: item }}
+
+onSubmit: any -> Msg
+onSubmit event =
+    do
+        globalThis.console.log event
+
+        label: string
+        label =
+            event.target.value
+    return
+        if event.keyCode == 13 then
+            AddItem { label: event.target.value }
+        else
+            SetInput { input: label }
+
+viewHeader: Model -> HtmlNode Msg
+viewHeader model =
+    Html.header [ ] [ class_ "header" ] [
+        Html.h1 [ ] [ ] [ text "todos" ],
+        Html.input [ Html.onWithOptions "keydown" onSubmit false false ] [
+            class_ "new-todo",
+            Html.attribute "placeholder" "What needs to be done?",
+            Html.attribute "autofocus" "true",
+            Html.attribute "value" model.input
+        ]
+    ]
+
+viewListItem: ListItem -> HtmlNode Msg
+viewListItem item =
+    let
+        className: string
+        className =
+            if item.completed then
+                "completed"
+            else
+                ""
+    in
+        Html.li [ ] [ class_ className ] [
+            div [ ] [ class_ "view" ] [
+                Html.input [ Html.onWithOptions "click" (\_ -> ToggleCompleted { item: item }) false false ] [
+                    class_ "toggle",
+                    Html.attribute "type" "checkbox",
+                    Html.booleanAttribute "checked" item.completed
+                ],
+                Html.label [ ] [ ] [ text item.label ],
+                Html.button [ Html.onClick (\_ -> DestroyItem { item: item }) ] [ class_ "destroy" ] [ ]
+            ],
+            Html.input [ Html.onWithOptions "doubleclick" (\_ -> Edit { item: item }) false false ] [
+                class_ "edit",
+                Html.attribute "value" "Hmm"
+            ]
+        ]
+
+filteredItems: FilterMode -> List ListItem -> List ListItem
+filteredItems filterMode items =
+    case filterMode of
+        All ->
+            items
+
+        Active ->
+            List.filter (\item -> !item.completed) items
+
+        Completed ->
+            List.filter (\item -> item.completed) items
+
+viewList: Model -> HtmlNode Msg
+viewList model =
+    let
+        items: List ListItem
+        items =
+            filteredItems model.filterMode model.list
+    in
+        Html.ul [ ] [ class_ "todo-list" ] (List.map viewListItem items)
+
+viewMain: Model -> HtmlNode Msg
+viewMain model =
+    Html.section [ ] [ class_ "main" ] [
+        Html.input [ Html.onWithOptions "click" (\event -> ToggleAll { state: event.target.checked }) false false ] [
+            Html.attribute "id" "toggle-all",
+            class_ "toggle-all",
+            Html.attribute "type" "checkbox"
+        ],
+        Html.label [ ] [ Html.attribute "for" "toggle-all" ] [ text "Mark all as complete" ],
+        viewList model
+    ]
+
+viewFooter: Model -> HtmlNode Msg
+viewFooter model =
+    let
+        activeItems: List ListItem
+        activeItems =
+            filteredItems Active model.list
+
+        completedItems: List ListItem
+        completedItems =
+            filteredItems Completed model.list
+
+        maybeClearButton: HtmlNode Msg
+        maybeClearButton =
+            if completedItems.length == 0 then
+                text ""
+            else
+                Html.button [ Html.onClick (\_ -> ClearCompleted) ] [ class_ "clear-completed" ] [ text "Clear completed" ]
+
+        setModeEventHandler: FilterMode -> Html.Event Msg
+        setModeEventHandler mode =
+            Html.onWithOptions "click" (\_ -> SetFilterMode { mode: mode }) false false
+
+        itemsLeftText: string
+        itemsLeftText =
+            if activeItems.length == 1 then
+                `${activeItems.length} item left`
+            else
+                `${activeItems.length} items left`
+
+        allClass: string
+        allClass =
+            case model.filterMode of
+                All -> "selected"
+                default -> ""
+
+        activeClass: string
+        activeClass =
+            case model.filterMode of
+                Active -> "selected"
+                default -> ""
+
+        completedClass: string
+        completedClass =
+            case model.filterMode of
+                Completed -> "selected"
+                default -> ""
+    in
+        Html.footer [ ] [ class_ "footer" ] [
+            Html.span [ ] [ class_ "todo-count" ] [ Html.strong [ ] [ ] [ text itemsLeftText ] ],
+            Html.ul [ ] [ class_ "filters" ] [
+                Html.li [ ] [ ] [ Html.a [ setModeEventHandler All ] [
+                    class_ allClass,
+                    Html.attribute "href" "#/"
+                ] [ text "All" ] ],
+                Html.li [ ] [  ] [ Html.a [ setModeEventHandler Active  ] [ class_ activeClass, Html.attribute "href" "#/active" ] [ text "Active" ] ],
+                Html.li [ ] [ ] [ Html.a [ setModeEventHandler Completed ] [ class_ completedClass, Html.attribute "href" "#/completed" ] [ text "Completed" ] ]
+            ],
+            maybeClearButton
+        ]
+
+view: Model -> HtmlNode Msg
+view model =
+    if model.list.length == 0 then
+        Html.section [ ] [ class_ "todoapp" ] [
+            viewHeader model
+        ]
+    else
+        Html.section [ ] [ class_ "todoapp" ] [
+            viewHeader model,
+            viewMain model,
+            viewFooter model
+        ]
+
+root: any
+root =
+    document.getElementById "root"
+
+main: RunningProgram Model Msg
+main =
+    let
+        filterMode: FilterMode
+        filterMode =
+            urlParser window.location.hash
+    in
+        program {
+            initialModel: { ...initialModel, filterMode: filterMode },
+            view: view,
+            update: update,
+            root: root
+        }
+
+urlParser: string -> FilterMode
+urlParser path =
+    case path of
+        "#/completed" ->
+            Completed
+
+        "#/active" ->
+            Active
+
+        default ->
+            All
