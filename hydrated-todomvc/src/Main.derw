@@ -6,6 +6,8 @@ import "../derw-packages/derw-lang/stdlib/src/Task" as Task
 import "../derw-packages/derw-lang/stdlib/src/Maybe" as Maybe exposing (Maybe, Just, Nothing)
 import "../derw-packages/derw-lang/web/src/LocalStorage" as LocalStorage
 
+exposing (initialModel, Model, view, ListItem)
+
 type alias ListItem = {
     id: number,
     label: string,
@@ -27,7 +29,7 @@ type alias Model = {
 initialModel: Model
 initialModel =
     {
-        list: loadListItems 0,
+        list: [],
         input: "",
         filterMode: All,
         editing: Nothing
@@ -440,35 +442,44 @@ viewFooter model =
 view: Model -> HtmlNode Msg
 view model =
     if model.list.length == 0 then
-        Html.section [ ] [ class_ "todoapp" ] [
+        Html.section [ ] [ class_ "todoapp", Html.attribute "id" "section" ] [
             viewHeader model
         ]
     else
-        Html.section [ ] [ class_ "todoapp" ] [
+        Html.section [ ] [ class_ "todoapp", Html.attribute "id" "section" ] [
             viewHeader model,
             viewMain model,
             viewFooter model
         ]
 
-root: any
-root =
-    document.getElementById "root"
 
-main: RunningProgram Model Msg
+main: void -> RunningProgram Model Msg
 main =
     let
         filterMode: FilterMode
         filterMode =
             urlParser window.location.hash
 
+        dataRoot: any
+        dataRoot =
+            document.getElementById "data"
+
+        dataModel: Model
+        dataModel =
+            globalThis.JSON.parse dataRoot.innerHTML
+
         p: RunningProgram Model Msg
         p =
             program {
-                initialModel: { ...initialModel, filterMode: filterMode },
+                initialModel: { ...dataModel  },
                 view: view,
                 update: update,
-                root: root
+                root: "hydration"
             }
+
+        root: any
+        root =
+            document.getElementById "section"
 
         canceller: any -> void
         canceller event =
@@ -480,8 +491,23 @@ main =
         attach: void
         attach =
             document.addEventListener "keydown" canceller
+
+        hydrate: void
+        hydrate =
+            Html.hydrate p root
+
+        urlPage: void
+        urlPage =
+            p.send (SetFilterMode { mode: filterMode })
     in
         p
+
+runMain: any
+runMain =
+    if globalThis.document == undefined then
+        undefined
+    else
+        main()
 
 urlParser: string -> FilterMode
 urlParser path =
