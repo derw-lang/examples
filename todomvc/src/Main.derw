@@ -1,9 +1,9 @@
 import "../derw-packages/derw-lang/html/src/Html" as Html exposing ( HtmlNode, RunningProgram, div, text, program, attribute, class_ )
 import "../derw-packages/derw-lang/stdlib/src/List" as List
-import "../derw-packages/derw-lang/stdlib/src/String" as String
+import "../derw-packages/derw-lang/stdlib/src/Maybe" as Maybe exposing ( Maybe, Just, Nothing )
 import "../derw-packages/derw-lang/stdlib/src/Number" as Number
+import "../derw-packages/derw-lang/stdlib/src/String" as String
 import "../derw-packages/derw-lang/stdlib/src/Task" as Task
-import "../derw-packages/derw-lang/stdlib/src/Maybe" as Maybe exposing (Maybe, Just, Nothing)
 import "../derw-packages/derw-lang/web/src/LocalStorage" as LocalStorage
 
 type alias ListItem = {
@@ -77,12 +77,17 @@ decodeItem str =
                             Nothing
 
                         Just { value } ->
-                            Just { value: { id: value, completed: completed == "true", label: String.join "-" ys } }
+                            Just { value: {
+                                id: value,
+                                completed: completed == "true",
+                                label: String.join "-" ys
+                            } }
+
                 default ->
                     Nothing
+
         default ->
             Nothing
-
 
 loadListItems: any -> List ListItem
 loadListItems _ =
@@ -102,11 +107,12 @@ loadListItems _ =
 max: number -> List number -> number
 max start xs =
     case xs of
-        x::ys ->
+        x :: ys ->
             if start < x then
                 max x ys
             else
                 max start ys
+
         default ->
             start
 
@@ -132,7 +138,7 @@ update msg model send =
             let
                 updatedItems: List ListItem
                 updatedItems =
-                    List.map (\x -> { ...x, completed: state } ) model.list
+                    List.map (\x -> { ...x, completed: state }) model.list
 
                 store: void
                 store =
@@ -263,8 +269,11 @@ update msg model send =
                 store =
                     storeListItems maybeWithoutItem
             in
-                {...model, editing: Nothing, list: maybeWithoutItem }
-
+                {
+                    ...model,
+                    editing: Nothing,
+                    list: maybeWithoutItem
+                }
 
 viewHeader: Model -> HtmlNode Msg
 viewHeader model =
@@ -286,7 +295,6 @@ viewHeader model =
             ]
         ]
 
-
 viewListItem: Model -> ListItem -> HtmlNode Msg
 viewListItem model item =
     let
@@ -301,6 +309,7 @@ viewListItem model item =
                             "completed"
                         else
                             ""
+
                 Nothing ->
                     if item.completed then
                         "completed"
@@ -325,6 +334,7 @@ viewListItem model item =
             case model.editing of
                 Nothing ->
                     Save { item: item }
+
                 Just { value } ->
                     Save { item: { ...value, label: event.target.value } }
 
@@ -349,7 +359,10 @@ viewListItem model item =
                 viewItemLabel,
                 Html.button [ Html.onClick (\_ -> DestroyItem { item: item }) ] [ class_ "destroy" ] [ ]
             ],
-            Html.input [ Html.onWithOptions "keydown" onKeydown false false, Html.on "blur" onSave ] [
+            Html.input [
+                Html.onWithOptions "keydown" onKeydown false false,
+                Html.on "blur" onSave
+            ] [
                 class_ "edit",
                 Html.attribute "id" "editor",
                 Html.attribute "value" editingText
@@ -409,20 +422,29 @@ viewFooter model =
         allClass: string
         allClass =
             case model.filterMode of
-                All -> "selected"
-                default -> ""
+                All ->
+                    "selected"
+
+                default ->
+                    ""
 
         activeClass: string
         activeClass =
             case model.filterMode of
-                Active -> "selected"
-                default -> ""
+                Active ->
+                    "selected"
+
+                default ->
+                    ""
 
         completedClass: string
         completedClass =
             case model.filterMode of
-                Completed -> "selected"
-                default -> ""
+                Completed ->
+                    "selected"
+
+                default ->
+                    ""
     in
         Html.footer [ ] [ class_ "footer" ] [
             Html.span [ ] [ class_ "todo-count" ] [ Html.strong [ ] [ ] [ text itemsLeftText ] ],
@@ -431,8 +453,14 @@ viewFooter model =
                     class_ allClass,
                     Html.attribute "href" "#/"
                 ] [ text "All" ] ],
-                Html.li [ ] [  ] [ Html.a [ setModeEventHandler Active  ] [ class_ activeClass, Html.attribute "href" "#/active" ] [ text "Active" ] ],
-                Html.li [ ] [ ] [ Html.a [ setModeEventHandler Completed ] [ class_ completedClass, Html.attribute "href" "#/completed" ] [ text "Completed" ] ]
+                Html.li [ ] [ ] [ Html.a [ setModeEventHandler Active ] [
+                    class_ activeClass,
+                    Html.attribute "href" "#/active"
+                ] [ text "Active" ] ],
+                Html.li [ ] [ ] [ Html.a [ setModeEventHandler Completed ] [
+                    class_ completedClass,
+                    Html.attribute "href" "#/completed"
+                ] [ text "Completed" ] ]
             ],
             maybeClearButton
         ]
@@ -440,9 +468,7 @@ viewFooter model =
 view: Model -> HtmlNode Msg
 view model =
     if model.list.length == 0 then
-        Html.section [ ] [ class_ "todoapp" ] [
-            viewHeader model
-        ]
+        Html.section [ ] [ class_ "todoapp" ] [ viewHeader model ]
     else
         Html.section [ ] [ class_ "todoapp" ] [
             viewHeader model,
